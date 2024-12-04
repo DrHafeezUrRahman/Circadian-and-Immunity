@@ -1,0 +1,146 @@
+VAR
+
+Bmal = 0 1 ;
+PC = 0 1 ;
+CB = 0 1 ;
+REV = 0 1 ;
+RORs = 0 1 ;
+PICs = 0 1 ;
+AICs = 0 1 ;
+IL10 = 0 1 ;
+IL1B = 0 1 ;
+
+
+REG
+
+REV [(REV<1)]=> Bmal ;
+REV [(REV<1)]=> PICs ;
+CB [(CB>=1)]=> PC ;
+CB [(CB>=1)]=> RORs ;
+CB [(CB>=1)]=> REV ;
+PC [(PC<1)]=> CB ;
+PICs [(PICs>=1)]=> RORs ;
+AICs [(AICs<1)]=> RORs ;
+RORs [(RORs>=1)]=> Bmal ;
+RORs [(RORs>=1)]=> IL10 ;
+Bmal [(Bmal>=1)]=> CB ;
+CB   [(CB<1)]=> IL1B ;
+CB   [(CB<1)]=> PICs ;
+IL10 [(IL10>=1)]=> AICs ;
+IL1B [(IL1B<1)]=> IL10 ;
+IL1B [(IL1B<1)]=> AICs ;
+IL1B [(IL1B>=1)]=> RORs ;
+
+PARA
+
+# Parameters for REV
+
+K_REV = 0 ;
+K_REV+CB = 1 ;
+
+# Parameters for PC
+
+K_PC = 0 ;
+K_PC+CB = 1 ;
+
+# Parameters for CB
+
+K_CB = 0 ;
+K_CB+Bmal = 0 ;
+K_CB+PC = 0 ;
+K_CB+Bmal+PC = 1 ;
+
+# Parameters for Bmal
+
+K_Bmal = 0 ;
+K_Bmal+REV = 1 ;    # The absence of REV cause BMAL to express. Basal value defined.
+K_Bmal+RORs = 0 ;
+K_Bmal+REV+RORs = 1 ;
+
+# Parameters for RORs
+
+
+
+K_RORs = 0 ;
+K_RORs+AICs = 0 1 ; # No change in selected models
+K_RORs+CB = 0 1 ; # No change in selected models
+K_RORs+IL1B = 0 1 ; # No change in selected models
+K_RORs+PICs = 0 1 ; # No change in selected models
+K_RORs+AICs+CB = 0 1 ; # No change                         0 1 RORs cannot be 1 in the absence of PICs, therefore it is set to 0
+K_RORs+CB+IL1B = 0 1 ; # No change
+K_RORs+CB+PICs = 0 ;  #selected models increased from 8 to 10 out of 784
+K_RORs+AICs+IL1B = 0 1 ; #NO CHANGE
+K_RORs+IL1B+PICs = 0 1 ; # NO CHANGE
+K_RORs+AICs+PICs = 0 ; # reduced to 20 from 32
+K_RORs+AICs+CB+PICs = 1 ; 
+K_RORs+AICs+CB+IL1B = 0 ;  # selected 0 
+K_RORs+AICs+IL1B+PICs = 0 ;
+K_RORs+CB+IL1B+PICs = 0 ; # reduced to 8 from 20
+K_RORs+AICs+CB+IL1B+PICs = 1 ;
+
+
+
+# Parameters for PICs
+
+K_PICs+CB+REV = 1 ;
+K_PICs+REV = 0 ;
+K_PICs+CB = 0 ;
+K_PICs = 0 ;
+
+
+# Parameters for AICs
+
+K_AICs+IL1B = 0 1 ;
+K_AICs+IL10+IL1B = 1 ;
+K_AICs  = 0 ;
+K_AICs+IL10 = 1 ;     #/////////// from 0 to 0 1 models increased from 13 to 26
+
+
+# Parameters for IL10
+
+K_IL10+IL1B = 0 1 ;
+K_IL10+IL1B+RORs = 1 ;
+K_IL10 = 0 ;
+K_IL10+RORs = 0 ;     #selected 0
+
+
+# Parameters for IL1B
+
+K_IL1B+CB = 1 ;
+K_IL1B = 0 ;
+
+
+
+CTL
+
+
+#1. To check cycle from the initial state to initial state
+(EF(Bmal=0&CB=0&PC=0&REV=0&PICs=0&AICs=0&IL1B=0&IL10=0&RORs=0)->EX(Bmal=1)->EX(CB=1)->EX(PC=1)->EX(REV=1)->AX(EF(Bmal=0&CB=0&PC=0&REV=0&PICs=0&AICs=0&IL1B=0&IL10=0&RORs=0)))&
+
+#2. To verify oscillations of CB, Bmal etc.
+((A[(CB=0)U(CB=1)])->(E[(CB=1)U(CB=0)]))&
+((A[(Bmal=0)U(Bmal=1)])->(E[(Bmal=1)U(Bmal=0)]))&
+((A[(PC=0)U(PC=1)])->(E[(PC=1)U(PC=0)]))&
+((A[(REV=0)U(REV=1)])->(E[(REV=1)U(REV=0)]))&
+((A[(RORs=0)U(RORs=1)])->(E[(RORs=1)U(RORs=0)]))&
+
+#3. To verify inhibitory influence of REV and CB on PICs
+(AG(REV=1&CB=1)->(E[(PICs=1)U(PICs=0)]))
+
+#4. To verify inhibitory influence of CB on IL1B
+&(AG(CB=1)->(E[(IL1B=1)U(IL1B=0)]))
+
+#5. To verify inhibitory influence of IL1B on IL10
+&(AG(IL1B=1)->(E[(IL10=1)U(IL10=0)]))
+
+#6. To verify inhibitory influence of IL1B on AICs
+&(AG(IL1B=1)->(E[(AICs=1)U(AICs=0)]))
+
+#7. To verify the influence of PICs, CB and AICs on RORs
+&(AG(PICs=1&CB=1&AICs=0)->(E[(RORs=0)U(RORs=1)]))
+
+#8. To verify the influence of RORs on IL10
+&(AG(RORs=1)->(E[(IL10=0)U(IL10=1)]))
+
+#9. To verify the influence of inhibitor AICs on RORs
+&(AG(AICs=1&CB=1&PICs=1)->(E[(RORs=1)U(RORs=0)]))
